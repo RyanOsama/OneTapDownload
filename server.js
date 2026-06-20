@@ -103,7 +103,15 @@ app.post('/api/extract', async (req, res) => {
   const isWindows = process.platform === 'win32';
   const ytDlpPath = isWindows ? path.join(__dirname, 'yt-dlp.exe') : path.join(__dirname, 'yt-dlp');
 
-  execFile(ytDlpPath, ['-j', url], { maxBuffer: 10 * 1024 * 1024 }, (error, stdout, stderr) => {
+  // Configure yt-dlp arguments to bypass bot blocks and warnings
+  const ytDlpArgs = [
+    '-j',
+    '--js-runtimes', 'node',
+    '--extractor-args', 'youtube:player_client=ios,web',
+    url
+  ];
+
+  execFile(ytDlpPath, ytDlpArgs, { maxBuffer: 10 * 1024 * 1024 }, (error, stdout, stderr) => {
     if (error) {
       console.warn('yt-dlp failed, falling back to mock mode:', error.message);
       return sendMockResponse(res, matchedPlatformKey, platformInfo);
