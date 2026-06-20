@@ -105,6 +105,11 @@ app.post('/api/extract', async (req, res) => {
       const data = JSON.parse(stdout);
       const formats = data.formats || [];
 
+      // Filter audio-only formats
+      let audioFormats = formats.filter(f => f.vcodec === 'none' && f.acodec !== 'none' && f.url);
+      audioFormats.sort((a, b) => (b.abr || 0) - (a.abr || 0));
+      const bestAudio = audioFormats.length > 0 ? audioFormats[0] : null;
+
       const formatsByHeight = {};
       
       for (const f of formats) {
@@ -112,10 +117,13 @@ app.post('/api/extract', async (req, res) => {
           const h = f.height;
           const hasAudio = f.acodec && f.acodec !== 'none' && f.acodec !== 'null';
           
-          if (hasAudio) {
-            if (!formatsByHeight[h]) {
+          if (!formatsByHeight[h]) {
+            formatsByHeight[h] = f;
+          } else {
+            const existingHasAudio = formatsByHeight[h].acodec && formatsByHeight[h].acodec !== 'none' && formatsByHeight[h].acodec !== 'null';
+            if (!existingHasAudio && hasAudio) {
               formatsByHeight[h] = f;
-            } else {
+            } else if (existingHasAudio === hasAudio) {
               const currentSize = f.filesize || f.filesize_approx || 0;
               const existingSize = formatsByHeight[h].filesize || formatsByHeight[h].filesize_approx || 0;
               if (currentSize > existingSize) {
@@ -126,22 +134,7 @@ app.post('/api/extract', async (req, res) => {
         }
       }
 
-      let uniqueVideoFormats = Object.values(formatsByHeight).sort((a, b) => b.height - a.height);
-
-      // Fallback: if no video formats have audio, take any video formats
-      if (uniqueVideoFormats.length === 0) {
-        const fallbackFormats = {};
-        for (const f of formats) {
-          if (f.vcodec !== 'none' && f.url && f.height) {
-            const h = f.height;
-            if (!fallbackFormats[h]) {
-              fallbackFormats[h] = f;
-            }
-          }
-        }
-        uniqueVideoFormats = Object.values(fallbackFormats).sort((a, b) => b.height - a.height);
-      }
-
+      const uniqueVideoFormats = Object.values(formatsByHeight).sort((a, b) => b.height - a.height);
       const downloads = [];
 
       function formatSize(bytes) {
@@ -165,43 +158,43 @@ app.post('/api/extract', async (req, res) => {
           labelEn = 'Low Quality Video (MP4)';
         }
 
-        if (!hasAudio) {
-          labelAr += ' (بدون صوت)';
-          labelEn += ' (No Audio)';
+        let downloadUrl = '';
+        const cleanTitle = (data.title || platformInfo.placeholderTitle).replace(/[\\/*?:"<>|]/g, '');
+        const cleanFilename = `${cleanTitle}_${height}p.mp4`;
+
+        if (hasAudio) {
+          downloadUrl = `/api/download?url=${encodeURIComponent(vf.url)}&filename=${encodeURIComponent(cleanFilename)}`;
+        } else if (bestAudio) {
+          downloadUrl = `/api/download?videoUrl=${encodeURIComponent(vf.url)}&audioUrl=${encodeURIComponent(bestAudio.url)}&filename=${encodeURIComponent(cleanFilename)}`;
+        } else {
+          downloadUrl = `/api/download?url=${encodeURIComponent(vf.url)}&filename=${encodeURIComponent(cleanFilename)}`;
+        }
+
+        let sizeBytes = vf.filesize || vf.filesize_approx || 0;
+        if (!hasAudio && bestAudio) {
+          sizeBytes += (bestAudio.filesize || bestAudio.filesize_approx || 0);
         }
 
         downloads.push({
           labelAr: labelAr,
           labelEn: labelEn,
-          quality: `${height}p` + (!hasAudio ? ' (No Audio)' : ''),
-          size: formatSize(vf.filesize || vf.filesize_approx),
-          url: vf.url,
+          quality: `${height}p`,
+          size: formatSize(sizeBytes),
+          url: downloadUrl,
           type: 'video'
         });
       });
 
-      // Filter audio-only formats
-      let audioFormats = formats.filter(f => f.vcodec === 'none' && f.acodec !== 'none' && f.url);
-      audioFormats.sort((a, b) => (b.abr || 0) - (a.abr || 0));
-
-      if (audioFormats.length > 0) {
-        const audio = audioFormats[0];
+      // Add best audio only download option
+      if (bestAudio) {
+        const cleanTitle = (data.title || platformInfo.placeholderTitle).replace(/[\\/*?:"<>|]/g, '');
+        const cleanFilename = `${cleanTitle}.mp3`;
         downloads.push({
           labelAr: 'صوت فقط (MP3)',
           labelEn: 'Audio Only (MP3)',
-          quality: audio.abr ? `${Math.round(audio.abr)}kbps` : '128kbps',
-          size: formatSize(audio.filesize || audio.filesize_approx),
-          url: audio.url,
-          type: 'audio'
-        });
-      } else if (uniqueVideoFormats.length > 0) {
-        const bestAudio = uniqueVideoFormats[0];
-        downloads.push({
-          labelAr: 'صوت فقط (MP3)',
-          labelEn: 'Audio Only (MP3)',
-          quality: '128kbps',
+          quality: bestAudio.abr ? `${Math.round(bestAudio.abr)}kbps` : '128kbps',
           size: formatSize(bestAudio.filesize || bestAudio.filesize_approx),
-          url: bestAudio.url,
+          url: `/api/download?url=${encodeURIComponent(bestAudio.url)}&filename=${encodeURIComponent(cleanFilename)}`,
           type: 'audio'
         });
       }
@@ -272,33 +265,94 @@ function sendMockResponse(res, matchedPlatformKey, platformInfo) {
 
 // Proxy Endpoint to stream file downloads and bypass cross-origin browser issues
 app.get('/api/download', async (req, res) => {
-  const { url, filename } = req.query;
+  const { url, videoUrl, audioUrl, filename } = req.query;
 
-  if (!url) {
-    return res.status(400).send('URL is required');
+  if (!url && (!videoUrl || !audioUrl)) {
+    return res.status(400).send('URL or videoUrl + audioUrl is required');
   }
 
-  try {
-    const { Readable } = require('stream');
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+  const cleanFilename = filename || 'download.mp4';
+  res.attachment(cleanFilename);
+
+  // Case 1: Merge video and audio on-the-fly using ffmpeg
+  if (videoUrl && audioUrl) {
+    try {
+      const ffmpeg = require('ffmpeg-static');
+      const { spawn } = require('child_process');
+
+      console.log('Spawning ffmpeg to merge video and audio on-the-fly...');
+      
+      const userAgentHeader = 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36\r\n';
+
+      const ffmpegArgs = [
+        '-headers', userAgentHeader,
+        '-i', videoUrl,
+        '-headers', userAgentHeader,
+        '-i', audioUrl,
+        '-c:v', 'copy',
+        '-c:a', 'aac',
+        '-map', '0:v:0',
+        '-map', '1:a:0',
+        '-strict', 'experimental',
+        '-f', 'mp4',
+        '-movflags', 'frag_keyframe+empty_moov',
+        'pipe:1'
+      ];
+
+      res.setHeader('Content-Type', 'video/mp4');
+
+      const ffmpegProcess = spawn(ffmpeg, ffmpegArgs);
+
+      ffmpegProcess.stdout.pipe(res);
+
+      ffmpegProcess.stderr.on('data', (data) => {
+        // Stats logging can be added here if needed
+      });
+
+      ffmpegProcess.on('error', (err) => {
+        console.error('ffmpeg process error:', err);
+        if (!res.headersSent) {
+          res.status(500).send('Error merging media streams.');
+        }
+      });
+
+      req.on('close', () => {
+        console.log('Client closed connection, killing ffmpeg process');
+        try {
+          ffmpegProcess.kill('SIGKILL');
+        } catch (e) {
+          console.warn('Failed to kill ffmpeg process:', e.message);
+        }
+      });
+
+    } catch (err) {
+      console.error('Error starting ffmpeg merging proxy:', err);
+      if (!res.headersSent) {
+        res.status(500).send('Server error during media merging');
       }
-    });
-    if (!response.ok) throw new Error(`Failed to fetch file: ${response.statusText}`);
-
-    const contentType = response.headers.get('content-type');
-    res.attachment(filename || 'download');
-    if (contentType) {
-      res.setHeader('Content-Type', contentType);
     }
+  } else {
+    // Case 2: Standard download proxy (single URL)
+    try {
+      const { Readable } = require('stream');
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        }
+      });
+      if (!response.ok) throw new Error(`Failed to fetch file: ${response.statusText}`);
 
-    const nodeStream = Readable.fromWeb(response.body);
-    nodeStream.pipe(res);
-  } catch (error) {
-    console.error('Download proxy error:', error);
-    // If proxy fails, redirect user directly to the original URL
-    res.redirect(url);
+      const contentType = response.headers.get('content-type');
+      if (contentType) {
+        res.setHeader('Content-Type', contentType);
+      }
+
+      const nodeStream = Readable.fromWeb(response.body);
+      nodeStream.pipe(res);
+    } catch (error) {
+      console.error('Download proxy error:', error);
+      res.redirect(url);
+    }
   }
 });
 
