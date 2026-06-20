@@ -105,20 +105,31 @@ app.post('/api/extract', async (req, res) => {
       const data = JSON.parse(stdout);
       const formats = data.formats || [];
 
-      // Filter pre-merged formats (both video and audio)
-      let videoFormats = formats.filter(f => f.vcodec !== 'none' && f.acodec !== 'none' && f.url);
-      videoFormats.sort((a, b) => (b.height || 0) - (a.height || 0));
-
-      // Fallback: if no pre-merged formats, try any format with video
-      if (videoFormats.length === 0) {
-        videoFormats = formats.filter(f => f.vcodec !== 'none' && f.url);
-        videoFormats.sort((a, b) => (b.height || 0) - (a.height || 0));
+      const formatsByHeight = {};
+      
+      for (const f of formats) {
+        if (f.vcodec !== 'none' && f.url && f.height) {
+          const h = f.height;
+          const hasAudio = f.acodec !== 'none' && f.acodec !== null;
+          
+          if (!formatsByHeight[h]) {
+            formatsByHeight[h] = f;
+          } else {
+            const existingHasAudio = formatsByHeight[h].acodec !== 'none' && formatsByHeight[h].acodec !== null;
+            if (!existingHasAudio && hasAudio) {
+              formatsByHeight[h] = f;
+            } else if (existingHasAudio === hasAudio) {
+              const currentSize = f.filesize || f.filesize_approx || 0;
+              const existingSize = formatsByHeight[h].filesize || formatsByHeight[h].filesize_approx || 0;
+              if (currentSize > existingSize) {
+                formatsByHeight[h] = f;
+              }
+            }
+          }
+        }
       }
 
-      // Filter audio-only formats
-      let audioFormats = formats.filter(f => f.vcodec === 'none' && f.acodec !== 'none' && f.url);
-      audioFormats.sort((a, b) => (b.abr || 0) - (a.abr || 0));
-
+      const uniqueVideoFormats = Object.values(formatsByHeight).sort((a, b) => b.height - a.height);
       const downloads = [];
 
       function formatSize(bytes) {
@@ -126,43 +137,41 @@ app.post('/api/extract', async (req, res) => {
         return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
       }
 
-      // 1. HD Video
-      if (videoFormats.length > 0) {
-        const hd = videoFormats[0];
-        downloads.push({
-          labelAr: 'فيديو عالي الدقة (MP4)',
-          labelEn: 'HD Video (MP4)',
-          quality: hd.height ? `${hd.height}p` : 'HD',
-          size: formatSize(hd.filesize || hd.filesize_approx),
-          url: hd.url,
-          type: 'video'
-        });
-      }
+      uniqueVideoFormats.forEach(vf => {
+        const height = vf.height;
+        const hasAudio = vf.acodec !== 'none' && vf.acodec !== null;
+        
+        let labelAr = 'فيديو عالي الدقة (MP4)';
+        let labelEn = 'HD Video (MP4)';
+        
+        if (height < 720) {
+          labelAr = 'فيديو متوسط الدقة (MP4)';
+          labelEn = 'SD Video (MP4)';
+        }
+        if (height < 480) {
+          labelAr = 'فيديو منخفض الدقة (MP4)';
+          labelEn = 'Low Quality Video (MP4)';
+        }
 
-      // 2. SD Video
-      if (videoFormats.length > 1) {
-        const sd = videoFormats[Math.floor(videoFormats.length / 2)];
-        downloads.push({
-          labelAr: 'فيديو متوسط الدقة (MP4)',
-          labelEn: 'SD Video (MP4)',
-          quality: sd.height ? `${sd.height}p` : 'SD',
-          size: formatSize(sd.filesize || sd.filesize_approx),
-          url: sd.url,
-          type: 'video'
-        });
-      } else if (videoFormats.length === 1) {
-        const hd = videoFormats[0];
-        downloads.push({
-          labelAr: 'فيديو متوسط الدقة (MP4)',
-          labelEn: 'SD Video (MP4)',
-          quality: '360p',
-          size: 'N/A',
-          url: hd.url,
-          type: 'video'
-        });
-      }
+        if (!hasAudio) {
+          labelAr += ' (بدون صوت)';
+          labelEn += ' (No Audio)';
+        }
 
-      // 3. Audio Only
+        downloads.push({
+          labelAr: labelAr,
+          labelEn: labelEn,
+          quality: `${height}p` + (!hasAudio ? ' (No Audio)' : ''),
+          size: formatSize(vf.filesize || vf.filesize_approx),
+          url: vf.url,
+          type: 'video'
+        });
+      });
+
+      // Filter audio-only formats
+      let audioFormats = formats.filter(f => f.vcodec === 'none' && f.acodec !== 'none' && f.url);
+      audioFormats.sort((a, b) => (b.abr || 0) - (a.abr || 0));
+
       if (audioFormats.length > 0) {
         const audio = audioFormats[0];
         downloads.push({
@@ -173,8 +182,8 @@ app.post('/api/extract', async (req, res) => {
           url: audio.url,
           type: 'audio'
         });
-      } else if (videoFormats.length > 0) {
-        const bestAudio = videoFormats[0];
+      } else if (uniqueVideoFormats.length > 0) {
+        const bestAudio = uniqueVideoFormats[0];
         downloads.push({
           labelAr: 'صوت فقط (MP3)',
           labelEn: 'Audio Only (MP3)',
