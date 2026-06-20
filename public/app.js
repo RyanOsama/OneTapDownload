@@ -54,7 +54,8 @@ const PLATFORM_ICONS = {
   x: 'fa-brands fa-x-twitter',
   telegram: 'fa-brands fa-telegram',
   youtube: 'fa-brands fa-youtube',
-  facebook: 'fa-brands fa-facebook-f'
+  facebook: 'fa-brands fa-facebook-f',
+  tiktok: 'fa-brands fa-tiktok'
 };
 
 // Regex for platform checking (matching server.js)
@@ -64,7 +65,8 @@ const PLATFORM_REGEXES = {
   x: /(twitter\.com|x\.com)\/([a-zA-Z0-9_]+)\/status\/([0-9]+)/i,
   telegram: /(t\.me|telegram\.me|telegram\.org)\/([a-zA-Z0-9_]+)\/([0-9]+)/i,
   youtube: /(youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]+)/i,
-  facebook: /(facebook\.com|fb\.watch|fb\.com)\/(.*)\/(videos|posts|reels|watch)?/i
+  facebook: /(facebook\.com|fb\.watch|fb\.com)\/(.*)\/(videos|posts|reels|watch)?/i,
+  tiktok: /(tiktok\.com)/i
 };
 
 // Initialize Application
@@ -100,6 +102,7 @@ function setupEventListeners() {
         case 'snapchat': sampleUrl = 'https://www.snapchat.com/spotlight/W7tDg5...'; break;
         case 'telegram': sampleUrl = 'https://t.me/durov/214'; break;
         case 'facebook': sampleUrl = 'https://www.facebook.com/watch/?v=123456'; break;
+        case 'tiktok': sampleUrl = 'https://www.tiktok.com/@khaby.lame/video/7033526978453474566'; break;
       }
       urlInput.value = sampleUrl;
       handleUrlInput();

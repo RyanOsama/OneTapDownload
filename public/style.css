@@ -337,6 +337,7 @@ html[dir="ltr"] .platform-indicator {
 .platform-indicator.x { background: rgba(255, 255, 255, 0.1); color: #f3f4f6; }
 .platform-indicator.telegram { background: rgba(34, 158, 217, 0.15); color: #38bdf8; }
 .platform-indicator.facebook { background: rgba(24, 119, 242, 0.15); color: #60a5fa; }
+.platform-indicator.tiktok { background: rgba(0, 242, 254, 0.15); color: #00f2fe; }
 
 /* Input Field */
 .downloader-input-wrapper input {
@@ -591,6 +592,7 @@ html[dir="ltr"] .result-duration { right: 12px; }
 .result-platform-badge.telegram { background: rgba(34, 158, 217, 0.15); color: #38bdf8; }
 .result-platform-badge.youtube { background: rgba(255, 0, 0, 0.15); color: #ff3333; }
 .result-platform-badge.facebook { background: rgba(24, 119, 242, 0.15); color: #60a5fa; }
+.result-platform-badge.tiktok { background: rgba(0, 242, 254, 0.15); color: #00f2fe; }
 
 .result-author {
   font-size: 0.85rem;
@@ -818,6 +820,15 @@ html[dir="ltr"] .download-item:hover {
 }
 .platform-card.active#card-facebook .platform-icon {
   background: var(--color-facebook);
+  color: white;
+}
+
+.platform-card.active#card-tiktok {
+  border-color: #00f2fe;
+  box-shadow: 0 0 15px rgba(0, 242, 254, 0.25);
+}
+.platform-card.active#card-tiktok .platform-icon {
+  background: linear-gradient(45deg, #fe0979 0%, #00f2fe 100%);
   color: white;
 }
 

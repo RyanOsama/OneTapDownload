@@ -59,6 +59,14 @@ const PLATFORMS = {
     placeholderTitle: 'Facebook Shared Clip',
     mockAuthor: 'Social Network Connect',
     mockThumbnail: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=500&auto=format&fit=crop&q=60'
+  },
+  tiktok: {
+    name: 'TikTok',
+    regex: /(tiktok\.com)/i,
+    icon: 'tiktok',
+    placeholderTitle: 'TikTok Video',
+    mockAuthor: '@tiktok_creator',
+    mockThumbnail: 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=500&auto=format&fit=crop&q=60'
   }
 };
 
