@@ -110,15 +110,12 @@ app.post('/api/extract', async (req, res) => {
       for (const f of formats) {
         if (f.vcodec !== 'none' && f.url && f.height) {
           const h = f.height;
-          const hasAudio = f.acodec !== 'none' && f.acodec !== null;
+          const hasAudio = f.acodec && f.acodec !== 'none' && f.acodec !== 'null';
           
-          if (!formatsByHeight[h]) {
-            formatsByHeight[h] = f;
-          } else {
-            const existingHasAudio = formatsByHeight[h].acodec !== 'none' && formatsByHeight[h].acodec !== null;
-            if (!existingHasAudio && hasAudio) {
+          if (hasAudio) {
+            if (!formatsByHeight[h]) {
               formatsByHeight[h] = f;
-            } else if (existingHasAudio === hasAudio) {
+            } else {
               const currentSize = f.filesize || f.filesize_approx || 0;
               const existingSize = formatsByHeight[h].filesize || formatsByHeight[h].filesize_approx || 0;
               if (currentSize > existingSize) {
@@ -129,7 +126,22 @@ app.post('/api/extract', async (req, res) => {
         }
       }
 
-      const uniqueVideoFormats = Object.values(formatsByHeight).sort((a, b) => b.height - a.height);
+      let uniqueVideoFormats = Object.values(formatsByHeight).sort((a, b) => b.height - a.height);
+
+      // Fallback: if no video formats have audio, take any video formats
+      if (uniqueVideoFormats.length === 0) {
+        const fallbackFormats = {};
+        for (const f of formats) {
+          if (f.vcodec !== 'none' && f.url && f.height) {
+            const h = f.height;
+            if (!fallbackFormats[h]) {
+              fallbackFormats[h] = f;
+            }
+          }
+        }
+        uniqueVideoFormats = Object.values(fallbackFormats).sort((a, b) => b.height - a.height);
+      }
+
       const downloads = [];
 
       function formatSize(bytes) {
@@ -139,7 +151,7 @@ app.post('/api/extract', async (req, res) => {
 
       uniqueVideoFormats.forEach(vf => {
         const height = vf.height;
-        const hasAudio = vf.acodec !== 'none' && vf.acodec !== null;
+        const hasAudio = vf.acodec && vf.acodec !== 'none' && vf.acodec !== 'null';
         
         let labelAr = 'فيديو عالي الدقة (MP4)';
         let labelEn = 'HD Video (MP4)';
