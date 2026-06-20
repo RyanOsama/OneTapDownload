@@ -38,12 +38,16 @@
 }
 
 /* Base Body Styles */
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 body {
   font-family: var(--font-ar);
   background-color: var(--bg-color);
   color: var(--text-primary);
   min-height: 100vh;
-  overflow-x: hidden;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -66,7 +70,18 @@ a {
   padding: 0 20px;
 }
 
-/* Background Glowing Orbs */
+/* Background Glowing Orbs Containment */
+.glow-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: -1;
+  pointer-events: none;
+}
+
 .glow {
   position: absolute;
   border-radius: 50%;
@@ -326,6 +341,7 @@ html[dir="ltr"] .platform-indicator {
 /* Input Field */
 .downloader-input-wrapper input {
   flex: 1;
+  min-width: 0; /* Prevents overflow in flexbox on mobile */
   background: transparent;
   border: none;
   outline: none;
@@ -927,6 +943,7 @@ footer {
 }
 
 /* Responsive Styles */
+/* Responsive Styles */
 @media (max-width: 768px) {
   .hero-title {
     font-size: 2.1rem;
@@ -953,6 +970,96 @@ footer {
   
   .downloader-card {
     padding: 20px;
+  }
+}
+
+/* Extra Small Devices (Smartphones) */
+@media (max-width: 480px) {
+  .header-container {
+    padding: 0 12px;
+    height: 60px;
+  }
+  
+  .logo {
+    font-size: 1.1rem;
+    gap: 6px;
+  }
+  
+  .logo-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+  }
+  
+  #lang-toggle {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+  }
+  
+  .hero-section {
+    padding: 30px 10px 20px;
+  }
+  
+  .hero-title {
+    font-size: 1.8rem;
+  }
+  
+  .hero-subtitle {
+    font-size: 0.95rem;
+  }
+  
+  .downloader-card {
+    padding: 16px 14px;
+    border-radius: 16px;
+  }
+  
+  .downloader-input-wrapper {
+    height: 56px;
+    padding: 4px 10px;
+  }
+  
+  .downloader-input-wrapper input {
+    font-size: 0.95rem;
+  }
+  
+  .input-action-btn.paste-active {
+    padding: 0 8px;
+    font-size: 0.8rem;
+  }
+  
+  .platforms-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  
+  .platform-card {
+    padding: 14px 8px;
+    gap: 8px;
+  }
+  
+  .platform-icon {
+    width: 38px;
+    height: 38px;
+    font-size: 1.25rem;
+    border-radius: 10px;
+  }
+  
+  .platform-name {
+    font-size: 0.75rem;
+  }
+  
+  .content-card {
+    padding: 20px 16px;
+    border-radius: 16px;
+  }
+  
+  .content-card h1 {
+    font-size: 1.6rem;
+  }
+  
+  .content-card h2 {
+    font-size: 1.15rem;
   }
 }
 
