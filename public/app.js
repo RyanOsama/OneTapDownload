@@ -377,7 +377,10 @@ function triggerFileDownload(button, url, filename) {
   textSpan.innerText = STATE.translations[STATE.currentLanguage].downloadingText;
 
   // We request it via /api/download which forces attachment download
-  const downloadUrl = `/api/download?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`;
+  let downloadUrl = url;
+  if (!url.startsWith('/api/') && !url.startsWith('/')) {
+    downloadUrl = `/api/download?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`;
+  }
   
   // Simple technique to start the download via iframe or dynamic link
   const a = document.createElement('a');
