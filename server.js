@@ -189,6 +189,11 @@ app.post('/api/extract', async (req, res) => {
           sizeBytes += (bestAudio.filesize || bestAudio.filesize_approx || 0);
         }
 
+        // Skip showing this quality if size is null/0 (N/A) as requested by the user
+        if (!sizeBytes) {
+          return;
+        }
+
         downloads.push({
           labelAr: labelAr,
           labelEn: labelEn,
@@ -201,16 +206,19 @@ app.post('/api/extract', async (req, res) => {
 
       // Add best audio only download option
       if (bestAudio) {
-        const cleanTitle = (data.title || platformInfo.placeholderTitle).replace(/[\\/*?:"<>|]/g, '');
-        const cleanFilename = `${cleanTitle}.mp3`;
-        downloads.push({
-          labelAr: 'صوت فقط (MP3)',
-          labelEn: 'Audio Only (MP3)',
-          quality: bestAudio.abr ? `${Math.round(bestAudio.abr)}kbps` : '128kbps',
-          size: formatSize(bestAudio.filesize || bestAudio.filesize_approx),
-          url: `/api/download?url=${encodeURIComponent(bestAudio.url)}&filename=${encodeURIComponent(cleanFilename)}`,
-          type: 'audio'
-        });
+        const audioSize = bestAudio.filesize || bestAudio.filesize_approx || 0;
+        if (audioSize > 0) {
+          const cleanTitle = (data.title || platformInfo.placeholderTitle).replace(/[\\/*?:"<>|]/g, '');
+          const cleanFilename = `${cleanTitle}.mp3`;
+          downloads.push({
+            labelAr: 'صوت فقط (MP3)',
+            labelEn: 'Audio Only (MP3)',
+            quality: bestAudio.abr ? `${Math.round(bestAudio.abr)}kbps` : '128kbps',
+            size: formatSize(audioSize),
+            url: `/api/download?url=${encodeURIComponent(bestAudio.url)}&filename=${encodeURIComponent(cleanFilename)}`,
+            type: 'audio'
+          });
+        }
       }
 
       function formatDuration(seconds) {

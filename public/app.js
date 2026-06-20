@@ -354,14 +354,12 @@ function renderDownloadOptions(downloads) {
     const dlBtnText = button.querySelector('.dl-btn-text');
     dlBtnText.innerText = STATE.currentLanguage === 'en' ? 'Download' : 'تحميل';
 
-    // Attach Download action with Animation and Ad Gating
+    // Attach Download action with Animation (No Ad Gating)
     button.addEventListener('click', () => {
       const cleanTitle = STATE.lastResultData ? STATE.lastResultData.title : 'download';
       const filename = `${cleanTitle.replace(/[^a-zA-Z0-9أ-ي]/g, '_')}_${dl.quality}.${isVideo ? 'mp4' : 'mp3'}`;
       
-      showDownloadAdModal(() => {
-        triggerFileDownload(button, dl.url, filename);
-      });
+      triggerFileDownload(button, dl.url, filename);
     });
 
     item.appendChild(details);
@@ -502,13 +500,21 @@ function showDownloadAdModal(onComplete) {
   const timerEl = document.getElementById('ad-timer');
   const unlockBtn = document.getElementById('ad-unlock-btn');
   const unlockBtnText = document.getElementById('ad-unlock-btn-text');
+  const adVideo = document.getElementById('ad-video-player');
 
   modal.style.display = 'flex';
   unlockBtn.disabled = true;
 
+  // Reset and play the embedded video ad
+  if (adVideo) {
+    adVideo.load();
+    adVideo.currentTime = 0;
+    adVideo.play().catch(e => console.warn('Video playback was blocked or failed:', e));
+  }
+
   // Open the Adsterra Smartlink in a new tab/window
   try {
-    window.open('https://www.effectivecpmnetwork.com/ksw7tnygi?key=87a01910f49719dddf156a8a718d5891', '_blank');
+    window.open('https://alarmpenguinmelt.com/ksw7tnygi?key=87a01910f49719dddf156a8a718d5891', '_blank');
   } catch (e) {
     console.warn('Popup blocked by browser, continuing countdown.');
   }
@@ -546,6 +552,9 @@ function showDownloadAdModal(onComplete) {
       // Auto-download or click to download
       const completeAction = () => {
         modal.style.display = 'none';
+        if (adVideo) {
+          adVideo.pause();
+        }
         onComplete();
       };
       
