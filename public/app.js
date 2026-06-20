@@ -228,10 +228,7 @@ async function startAnalysis() {
     return;
   }
 
-  // Check Ad gating before proceeding
-  if (checkAdGating()) {
-    return;
-  }
+
 
   // Reset states
   hideError();
@@ -357,10 +354,14 @@ function renderDownloadOptions(downloads) {
     const dlBtnText = button.querySelector('.dl-btn-text');
     dlBtnText.innerText = STATE.currentLanguage === 'en' ? 'Download' : 'تحميل';
 
-    // Attach Download action with Animation
+    // Attach Download action with Animation and Ad Gating
     button.addEventListener('click', () => {
       const cleanTitle = STATE.lastResultData ? STATE.lastResultData.title : 'download';
-      triggerFileDownload(button, dl.url, `${cleanTitle.replace(/[^a-zA-Z0-9أ-ي]/g, '_')}_${dl.quality}.${isVideo ? 'mp4' : 'mp3'}`);
+      const filename = `${cleanTitle.replace(/[^a-zA-Z0-9أ-ي]/g, '_')}_${dl.quality}.${isVideo ? 'mp4' : 'mp3'}`;
+      
+      showDownloadAdModal(() => {
+        triggerFileDownload(button, dl.url, filename);
+      });
     });
 
     item.appendChild(details);
@@ -398,8 +399,7 @@ function triggerFileDownload(button, url, filename) {
     icon.className = 'fa-solid fa-circle-check';
     textSpan.innerText = STATE.translations[STATE.currentLanguage].downloadSuccess;
     
-    // Increment download count to trigger ad gate next time
-    incrementDownloadCount();
+
     
     setTimeout(() => {
       button.classList.remove('downloading');
@@ -497,21 +497,7 @@ function translateUI(lang) {
 }
 
 // Gating & Monetization (Ad Gating)
-function checkAdGating() {
-  const count = parseInt(localStorage.getItem('download_count') || '0', 10);
-  if (count >= 1) {
-    showAdModal();
-    return true; // Gated
-  }
-  return false; // Free
-}
-
-function incrementDownloadCount() {
-  let count = parseInt(localStorage.getItem('download_count') || '0', 10);
-  localStorage.setItem('download_count', count + 1);
-}
-
-function showAdModal() {
+function showDownloadAdModal(onComplete) {
   const modal = document.getElementById('ad-modal');
   const timerEl = document.getElementById('ad-timer');
   const unlockBtn = document.getElementById('ad-unlock-btn');
@@ -519,6 +505,13 @@ function showAdModal() {
 
   modal.style.display = 'flex';
   unlockBtn.disabled = true;
+
+  // Open the Adsterra Smartlink in a new tab/window
+  try {
+    window.open('https://www.effectivecpmnetwork.com/ksw7tnygi?key=87a01910f49719dddf156a8a718d5891', '_blank');
+  } catch (e) {
+    console.warn('Popup blocked by browser, continuing countdown.');
+  }
 
   let seconds = 10;
   timerEl.innerText = seconds;
@@ -545,17 +538,21 @@ function showAdModal() {
       unlockBtn.disabled = false;
       
       if (STATE.currentLanguage === 'ar') {
-        unlockBtnText.innerText = 'فتح التحميل الآن';
+        unlockBtnText.innerText = 'تحميل الملف الآن';
       } else {
-        unlockBtnText.innerText = 'Unlock Download Now';
+        unlockBtnText.innerText = 'Download File Now';
       }
       
-      // Click handler to unlock
-      unlockBtn.onclick = () => {
+      // Auto-download or click to download
+      const completeAction = () => {
         modal.style.display = 'none';
-        localStorage.setItem('download_count', '0'); // reset counter
-        startAnalysis(); // Auto-restart download analysis
+        onComplete();
       };
+      
+      unlockBtn.onclick = completeAction;
+      
+      // Auto-trigger download after 800ms of finishing countdown for smooth UX
+      setTimeout(completeAction, 800);
     }
   }, 1000);
 }
