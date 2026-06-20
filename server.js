@@ -101,7 +101,7 @@ app.post('/api/extract', async (req, res) => {
   const { execFile } = require('child_process');
   const path = require('path');
   const isWindows = process.platform === 'win32';
-  const ytDlpPath = isWindows ? path.join(__dirname, 'yt-dlp.exe') : 'yt-dlp';
+  const ytDlpPath = isWindows ? path.join(__dirname, 'yt-dlp.exe') : path.join(__dirname, 'yt-dlp');
 
   execFile(ytDlpPath, ['-j', url], { maxBuffer: 10 * 1024 * 1024 }, (error, stdout, stderr) => {
     if (error) {
