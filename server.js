@@ -322,7 +322,7 @@ app.get('/api/download', async (req, res) => {
       ffmpegProcess.stdout.pipe(res);
 
       ffmpegProcess.stderr.on('data', (data) => {
-        // Stats logging can be added here if needed
+        console.error('ffmpeg stderr:', data.toString());
       });
 
       ffmpegProcess.on('error', (err) => {
