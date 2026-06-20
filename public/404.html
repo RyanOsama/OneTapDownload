@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>الصفحة غير موجودة - 404 Not Found | OneTapDownload</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .error-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: calc(100vh - 140px);
+      padding: 40px 20px;
+      text-align: center;
+      z-index: 10;
+    }
+    
+    .error-code {
+      font-size: 8rem;
+      font-weight: 900;
+      background: var(--primary-glow);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      line-height: 1;
+      margin-bottom: 16px;
+      filter: drop-shadow(0 0 30px rgba(168, 85, 247, 0.3));
+      animation: pulse-glow 2s infinite alternate ease-in-out;
+    }
+
+    @keyframes pulse-glow {
+      from { filter: drop-shadow(0 0 20px rgba(168, 85, 247, 0.25)); }
+      to { filter: drop-shadow(0 0 40px rgba(217, 70, 239, 0.5)); }
+    }
+    
+    .error-title {
+      font-size: 1.8rem;
+      font-weight: 800;
+      margin-bottom: 16px;
+      color: white;
+    }
+    
+    .error-subtitle {
+      font-size: 1.05rem;
+      color: var(--text-secondary);
+      max-width: 480px;
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+  </style>
+</head>
+<body>
+  <div class="glow glow-1"></div>
+  <div class="glow glow-2"></div>
+
+  <!-- Header -->
+  <header>
+    <div class="header-container container">
+      <div class="logo">
+        <div class="logo-icon">
+          <i class="fa-solid fa-bolt"></i>
+        </div>
+        <span class="logo-text">OneTap<span class="highlight">Download</span></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Error Container -->
+  <div class="error-container container">
+    <div class="error-code">404</div>
+    <h1 class="error-title">عذراً، الصفحة غير موجودة / Page Not Found</h1>
+    <p class="error-subtitle">
+      يبدو أن الرابط الذي حاولت الوصول إليه قد تم حذفه، أو قمت بكتابة عنوان URL خاطئ. يرجى العودة للرئيسية والبدء في تنزيل وسائطك المفضلة مجدداً.
+      <br><br>
+      The page you are looking for might have been removed or has its name changed. Let's get you back to the home page.
+    </p>
+    <a href="index.html" class="btn btn-primary">
+      <i class="fa-solid fa-house"></i>
+      <span>العودة للرئيسية / Back to Home</span>
+    </a>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-container container">
+      <p class="copyright">&copy; 2026 OneTapDownload. جميع الحقوق محفوظة / All rights reserved.</p>
+    </div>
+  </footer>
+</body>
+</html>

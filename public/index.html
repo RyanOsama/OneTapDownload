@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OneTapDownload - تحميل بضغطة واحدة من أي منصة</title>
+  <!-- Meta Tags for SEO -->
+  <meta name="description" content="OneTapDownload - حمل مقاطع الفيديو والصور من يوتيوب، إنستغرام، فيسبوك، سناب شات، تيليجرام وتويتر بضغطة واحدة وبسرعة فائقة.">
+  <meta name="keywords" content="تحميل فيديو, يوتيوب, انستغرام, تويتر, سناب شات, تيليجرام, فيسبوك, تحميل بضغطة واحدة, OneTapDownload">
+  <meta name="author" content="OneTapDownload">
+  <meta property="og:title" content="OneTapDownload - One Link. One Tap. Download.">
+  <meta property="og:description" content="أسرع وأسهل طريقة لتحميل المقاطع من مختلف منصات التواصل الاجتماعي بضغطة زر واحدة.">
+  <meta property="og:type" content="website">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Google Search Console Verification (Replace content with your verification key) -->
+  <!-- <meta name="google-site-verification" content="YOUR_VERIFICATION_KEY_HERE" /> -->
+
+  <!-- Google Analytics / gtag.js (Uncomment and replace G-XXXXXXXXXX with your ID) -->
+  <!--
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-XXXXXXXXXX');
+  </script>
+  -->
+</head>
+<body>
+  
+  <!-- Background Glows -->
+  <div class="glow glow-1"></div>
+  <div class="glow glow-2"></div>
+  <div class="glow glow-3"></div>
+
+  <!-- Header -->
+  <header>
+    <div class="header-container container">
+      <div class="logo">
+        <div class="logo-icon">
+          <i class="fa-solid fa-bolt"></i>
+        </div>
+        <span class="logo-text">OneTap<span class="highlight">Download</span></span>
+      </div>
+      
+      <div class="header-actions">
+        <!-- Language Switcher -->
+        <button id="lang-toggle" class="btn btn-secondary btn-sm" aria-label="Switch Language">
+          <i class="fa-solid fa-globe"></i>
+          <span id="lang-label">English</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero-section container">
+    <div class="hero-content">
+      <span class="badge" data-en="“One Link. One Tap. Download.”" data-ar="“رابط واحد. ضغطة واحدة. تحميل.”">“رابط واحد. ضغطة واحدة. تحميل.”</span>
+      <h1 class="hero-title" data-en="Download Media Instantly" data-ar="حمّل وسائطك المفضلة فوراً">حمّل وسائطك المفضلة فوراً</h1>
+      <p class="hero-subtitle" data-en="The fastest, cleanest way to download videos and posts from your favorite platforms. Just copy, paste, and download in seconds." data-ar="الطريقة الأسرع والأنظف لتحميل مقاطع الفيديو والمنشورات من منصاتك المفضلة. فقط انسخ، الصق، وحمّل في ثوانٍ معدودة.">الطريقة الأسرع والأنظف لتحميل مقاطع الفيديو والمنشورات من منصاتك المفضلة. فقط انسخ، الصق، وحمّل في ثوانٍ معدودة.</p>
+    </div>
+  </section>
+
+  <!-- Download Tool Area -->
+  <main class="main-container container">
+    <!-- Main Downloader Card -->
+    <div class="downloader-card">
+      <div class="downloader-input-wrapper">
+        <div class="platform-indicator" id="platform-badge" style="display: none;">
+          <i class="fa-brands fa-youtube"></i>
+          <span id="platform-badge-name">YouTube</span>
+        </div>
+        
+        <input type="url" id="url-input" placeholder="أدخل أو الصق رابط الفيديو هنا..." data-placeholder-ar="أدخل أو الصق رابط الفيديو هنا..." data-placeholder-en="Enter or paste the video link here..." autocomplete="off">
+        
+        <div class="input-actions">
+          <button id="clear-btn" class="input-action-btn" title="مسح" style="display: none;">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+          <button id="paste-btn" class="input-action-btn paste-active" title="لصق الرابط" data-title-ar="لصق الرابط" data-title-en="Paste Link">
+            <i class="fa-regular fa-clipboard"></i>
+            <span class="btn-text" data-en="Paste" data-ar="لصق">لصق</span>
+          </button>
+        </div>
+      </div>
+      
+      <button id="download-btn" class="btn btn-primary btn-block">
+        <span class="btn-content">
+          <i class="fa-solid fa-arrow-down-to-bracket"></i>
+          <span class="download-text" data-en="Download Now" data-ar="تحميل الآن">تحميل الآن</span>
+        </span>
+      </button>
+
+      <!-- Analysis / Loading State -->
+      <div class="loading-state" id="loading-state" style="display: none;">
+        <div class="spinner-container">
+          <div class="scanner-line"></div>
+          <div class="double-bounce1"></div>
+          <div class="double-bounce2"></div>
+        </div>
+        <div class="loading-text-container">
+          <h3 id="loading-title" data-en="Analyzing Link..." data-ar="جاري تحليل الرابط...">جاري تحليل الرابط...</h3>
+          <p id="loading-sub" data-en="Fetching video information from servers..." data-ar="جاري جلب معلومات الفيديو من الخوادم...">جاري جلب معلومات الفيديو من الخوادم...</p>
+        </div>
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill" id="analysis-progress"></div>
+        </div>
+      </div>
+
+      <!-- Error State -->
+      <div class="error-state" id="error-state" style="display: none;">
+        <div class="error-icon">
+          <i class="fa-solid fa-circle-exclamation"></i>
+        </div>
+        <p id="error-msg">حدث خطأ ما. يرجى التحقق من الرابط والمحاولة مجدداً.</p>
+      </div>
+
+      <!-- Result Card -->
+      <div class="result-card" id="result-card" style="display: none;">
+        <div class="result-grid">
+          <div class="result-preview">
+            <img id="result-thumb" src="" alt="Thumbnail preview">
+            <span class="result-duration" id="result-duration">0:00</span>
+            <div class="play-overlay">
+              <i class="fa-solid fa-play"></i>
+            </div>
+          </div>
+          <div class="result-info">
+            <div class="result-meta">
+              <span class="result-platform-badge" id="result-platform">
+                <i class="fa-brands fa-youtube"></i>
+                <span id="result-platform-text">YouTube</span>
+              </span>
+              <span class="result-author" id="result-author">@author</span>
+            </div>
+            <h2 class="result-title" id="result-title">عنوان الفيديو يظهر هنا</h2>
+            
+            <div class="download-options">
+              <h4 class="options-heading" data-en="Available Downloads" data-ar="خيارات التحميل المتاحة">خيارات التحميل المتاحة</h4>
+              <div class="options-grid" id="options-container">
+                <!-- Javascript will inject options here -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Supported Platforms Area -->
+    <div class="platforms-section">
+      <h3 class="section-title" data-en="Supported Platforms" data-ar="المنصات المدعومة">المنصات المدعومة</h3>
+      <div class="platforms-grid" id="platforms-grid">
+        <div class="platform-card" data-platform="instagram" id="card-instagram">
+          <div class="platform-icon brand-instagram">
+            <i class="fa-brands fa-instagram"></i>
+          </div>
+          <span class="platform-name">Instagram</span>
+        </div>
+        
+        <div class="platform-card" data-platform="snapchat" id="card-snapchat">
+          <div class="platform-icon brand-snapchat">
+            <i class="fa-brands fa-snapchat"></i>
+          </div>
+          <span class="platform-name">Snapchat</span>
+        </div>
+        
+        <div class="platform-card" data-platform="x" id="card-x">
+          <div class="platform-icon brand-x">
+            <i class="fa-brands fa-x-twitter"></i>
+          </div>
+          <span class="platform-name">X (Twitter)</span>
+        </div>
+
+        <div class="platform-card" data-platform="telegram" id="card-telegram">
+          <div class="platform-icon brand-telegram">
+            <i class="fa-brands fa-telegram"></i>
+          </div>
+          <span class="platform-name">Telegram</span>
+        </div>
+
+        <div class="platform-card" data-platform="youtube" id="card-youtube">
+          <div class="platform-icon brand-youtube">
+            <i class="fa-brands fa-youtube"></i>
+          </div>
+          <span class="platform-name">YouTube</span>
+        </div>
+
+        <div class="platform-card" data-platform="facebook" id="card-facebook">
+          <div class="platform-icon brand-facebook">
+            <i class="fa-brands fa-facebook-f"></i>
+          </div>
+          <span class="platform-name">Facebook</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Features Section -->
+    <div class="features-section">
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fa-solid fa-gauge-high"></i></div>
+        <h4 data-en="Instant Analysis" data-ar="تحليل فوري">تحليل فوري</h4>
+        <p data-en="Paste your link and watch our engine resolve high quality media instantly." data-ar="الصق الرابط الخاص بك ودع محركنا يستخرج الوسائط عالية الجودة فوراً.">الصق الرابط الخاص بك ودع محركنا يستخرج الوسائط عالية الجودة فوراً.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fa-solid fa-circle-check"></i></div>
+        <h4 data-en="No registration" data-ar="بدون تسجيل">بدون تسجيل</h4>
+        <p data-en="Download as much as you want without creating accounts or subscription limits." data-ar="حمّل كما تشاء دون الحاجة لإنشاء حسابات أو قيود اشتراك.">حمّل كما تشاء دون الحاجة لإنشاء حسابات أو قيود اشتراك.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fa-solid fa-shield-halved"></i></div>
+        <h4 data-en="Secure & Private" data-ar="آمن وخصوصي">آمن وخصوصي</h4>
+        <p data-en="We prioritize your privacy. No tracking logs of your downloads are stored." data-ar="نضع خصوصيتك في المقام الأول. لا يتم حفظ أي سجلات تتبع لعمليات التحميل.">نضع خصوصيتك في المقام الأول. لا يتم حفظ أي سجلات تتبع لعمليات التحميل.</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- How It Works Section -->
+  <section class="how-it-works container">
+    <h3 class="section-title" data-en="How it works" data-ar="كيفية التحميل">كيفية التحميل</h3>
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-num">01</div>
+        <h4 data-en="Copy Link" data-ar="نسخ الرابط">نسخ الرابط</h4>
+        <p data-en="Copy the video or post link from the application or website." data-ar="انسخ رابط المنشور أو الفيديو من التطبيق أو موقع الويب المفضل لديك.">انسخ رابط المنشور أو الفيديو من التطبيق أو موقع الويب المفضل لديك.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">02</div>
+        <h4 data-en="One Tap Paste" data-ar="لصق بضغطة واحدة">لصق بضغطة واحدة</h4>
+        <p data-en="Click the paste button or enter the URL into our smart search field." data-ar="اضغط على زر اللصق السريع أو الصق الرابط في حقل البحث الذكي.">اضغط على زر اللصق السريع أو الصق الرابط في حقل البحث الذكي.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">03</div>
+        <h4 data-en="Download" data-ar="تحميل وحفظ">تحميل وحفظ</h4>
+        <p data-en="Select your preferred quality and download directly to your device." data-ar="اختر الجودة المطلوبة وحمّل المقطع مباشرة إلى جهازك بضغطة زر.">اختر الجودة المطلوبة وحمّل المقطع مباشرة إلى جهازك بضغطة زر.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-container container">
+      <div class="footer-links" style="margin-bottom: 12px; display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; font-size: 0.85rem; font-weight: 500; color: var(--text-secondary);">
+        <a href="about.html" style="hover: color: white;" data-en="About Us" data-ar="من نحن">من نحن</a>
+        <span>•</span>
+        <a href="contact.html" data-en="Contact Us" data-ar="اتصل بنا">اتصل بنا</a>
+        <span>•</span>
+        <a href="privacy.html" data-en="Privacy Policy" data-ar="سياسة الخصوصية">سياسة الخصوصية</a>
+        <span>•</span>
+        <a href="terms.html" data-en="Terms of Service" data-ar="شروط الخدمة">شروط الخدمة</a>
+      </div>
+      <p class="copyright">&copy; 2026 OneTapDownload. <span data-en="All rights reserved." data-ar="جميع الحقوق محفوظة.">جميع الحقوق محفوظة.</span></p>
+      <div class="footer-disclaimer">
+        <p data-en="Disclaimer: OneTapDownload does not host any content. All videos/media are served directly from platform CDNs. This tool is for educational purposes." data-ar="إخلاء مسؤولية: OneTapDownload لا يستضيف أي محتوى. يتم سحب جميع الوسائط مباشرة من خوادم المنصات الأصلية. هذا الموقع مخصص للاستخدام التعليمور فقط.">إخلاء مسؤولية: OneTapDownload لا يستضيف أي محتوى. يتم سحب جميع الوسائط مباشرة من خوادم المنصات الأصلية. هذا الموقع مخصص للاستخدام التعليمي فقط.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Ad Gating Modal -->
+  <div class="modal-overlay" id="ad-modal" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-icon">
+        <i class="fa-solid fa-rectangle-ad"></i>
+      </div>
+      <h3 class="modal-title" data-en="Support Our Free Service" data-ar="ادعم خدمتنا المجانية">ادعم خدمتنا المجانية</h3>
+      <p class="modal-text" data-en="To download another video, please watch a short sponsor ad to keep our service online." data-ar="لتحميل مقطع فيديو آخر مجاناً، يرجى الانتظار لمشاهدة إعلان قصير لمساعدتنا في إبقاء الخدمة سريعة ومجانية.">لتحميل مقطع فيديو آخر مجاناً، يرجى الانتظار لمشاهدة إعلان قصير لمساعدتنا في إبقاء الخدمة سريعة ومجانية.</p>
+      
+      <!-- Simulated Video Ad Area -->
+      <div class="ad-placeholder">
+        <div class="ad-timer" id="ad-timer">10</div>
+        <div class="ad-video-mock">
+          <i class="fa-solid fa-play"></i>
+          <span data-en="Sponsor Video Playing..." data-ar="جاري تشغيل إعلان الممول...">جاري تشغيل إعلان الممول...</span>
+        </div>
+      </div>
+      
+      <button id="ad-unlock-btn" class="btn btn-primary btn-block" disabled>
+        <span id="ad-unlock-btn-text" data-en="Please Wait (10s)..." data-ar="يرجى الانتظار (10 ث)...">يرجى الانتظار (10 ث)...</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Javascript -->
+  <script src="app.js"></script>
+</body>
+</html>
