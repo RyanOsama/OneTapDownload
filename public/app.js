@@ -44,7 +44,6 @@ const loadingSub = document.getElementById('loading-sub');
 const analysisProgress = document.getElementById('analysis-progress');
 const errorState = document.getElementById('error-state');
 const errorMsg = document.getElementById('error-msg');
-const resultCard = document.getElementById('result-card');
 const langToggle = document.getElementById('lang-toggle');
 
 // Platform icons configuration
@@ -52,7 +51,6 @@ const PLATFORM_ICONS = {
   instagram: 'fa-brands fa-instagram',
   snapchat: 'fa-brands fa-snapchat',
   x: 'fa-brands fa-x-twitter',
-  telegram: 'fa-brands fa-telegram',
   youtube: 'fa-brands fa-youtube',
   facebook: 'fa-brands fa-facebook-f',
   tiktok: 'fa-brands fa-tiktok'
@@ -61,12 +59,11 @@ const PLATFORM_ICONS = {
 // Regex for platform checking (matching server.js)
 const PLATFORM_REGEXES = {
   instagram: /(instagram\.com|instagr\.am)\/(p|reel|tv|stories)\/([a-zA-Z0-9-_]+)/i,
-  snapchat: /(snapchat\.com|snap\.com)\/(add|story|spotlight)\/([a-zA-Z0-9-_.]+)/i,
+  snapchat: /(snapchat\.com)/i,
   x: /(twitter\.com|x\.com)\/([a-zA-Z0-9_]+)\/status\/([0-9]+)/i,
-  telegram: /(t\.me|telegram\.me|telegram\.org)\/([a-zA-Z0-9_]+)\/([0-9]+)/i,
   youtube: /(youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]+)/i,
   facebook: /(facebook\.com|fb\.watch|fb\.com)\/(.*)\/(videos|posts|reels|watch)?/i,
-  tiktok: /(tiktok\.com)/i
+  tiktok: /(tiktok\.com|vm\.tiktok\.com)/i
 };
 
 // Initialize Application
@@ -99,8 +96,7 @@ function setupEventListeners() {
         case 'youtube': sampleUrl = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'; break;
         case 'instagram': sampleUrl = 'https://www.instagram.com/reel/C-xyz123/'; break;
         case 'x': sampleUrl = 'https://x.com/tech/status/1234567890'; break;
-        case 'snapchat': sampleUrl = 'https://www.snapchat.com/spotlight/W7tDg5...'; break;
-        case 'telegram': sampleUrl = 'https://t.me/durov/214'; break;
+        case 'snapchat': sampleUrl = 'https://www.snapchat.com/spotlight/xyz'; break;
         case 'facebook': sampleUrl = 'https://www.facebook.com/watch/?v=123456'; break;
         case 'tiktok': sampleUrl = 'https://www.tiktok.com/@khaby.lame/video/7033526978453474566'; break;
       }
@@ -297,29 +293,52 @@ function animateLoadingProgress() {
 function showResult(data) {
   STATE.lastResultData = data;
   
-  // Set basic data
-  document.getElementById('result-title').innerText = data.title;
-  document.getElementById('result-author').innerText = data.author;
-  document.getElementById('result-thumb').src = data.thumbnail;
-  document.getElementById('result-duration').innerText = data.duration;
+  const container = document.getElementById('results-container');
+  const template = document.getElementById('result-card-template');
+  
+  // Clear existing results
+  container.innerHTML = '';
+  
+  if (!data.items || data.items.length === 0) {
+    showError(STATE.translations[STATE.currentLanguage].invalidUrlError);
+    return;
+  }
+  
+  data.items.forEach((itemData, index) => {
+    // Clone template
+    const clone = template.content.cloneNode(true);
+    const card = clone.querySelector('.result-card');
+    
+    // Fill data
+    clone.querySelector('.result-title').innerText = itemData.title;
+    clone.querySelector('.result-author').innerText = itemData.author;
+    clone.querySelector('.result-thumb').src = itemData.thumbnail;
+    clone.querySelector('.result-duration').innerText = itemData.duration;
 
-  // Platform badge in result card
-  const badge = document.getElementById('result-platform');
-  badge.className = `result-platform-badge ${data.platform}`;
-  badge.querySelector('i').className = PLATFORM_ICONS[data.platform];
-  document.getElementById('result-platform-text').innerText = data.platformName;
+    const badge = clone.querySelector('.result-platform-badge');
+    badge.className = `result-platform-badge ${itemData.platform}`;
+    const icon = clone.querySelector('.platform-icon-el');
+    icon.className = `platform-icon-el ${PLATFORM_ICONS[itemData.platform]}`;
+    clone.querySelector('.result-platform-text').innerText = itemData.platformName;
 
-  // Render options
-  renderDownloadOptions(data.downloads);
+    // Translate static parts
+    const heading = clone.querySelector('.options-heading');
+    heading.innerText = STATE.currentLanguage === 'en' ? heading.getAttribute('data-en') : heading.getAttribute('data-ar');
 
-  resultCard.style.display = 'block';
+    // Render options inside this specific card
+    const optionsContainer = clone.querySelector('.options-grid');
+    renderDownloadOptionsForCard(itemData.downloads, optionsContainer, itemData);
+
+    container.appendChild(clone);
+  });
+  
+  container.style.display = 'flex';
   // Scroll to results smoothly
-  resultCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 // Render the download options list dynamically
-function renderDownloadOptions(downloads) {
-  const container = document.getElementById('options-container');
+function renderDownloadOptionsForCard(downloads, container, itemData) {
   container.innerHTML = '';
 
   downloads.forEach(dl => {
@@ -354,9 +373,9 @@ function renderDownloadOptions(downloads) {
     const dlBtnText = button.querySelector('.dl-btn-text');
     dlBtnText.innerText = STATE.currentLanguage === 'en' ? 'Download' : 'تحميل';
 
-    // Attach Download action with Animation (No Ad Gating)
+    // Attach Download action
     button.addEventListener('click', () => {
-      const cleanTitle = STATE.lastResultData ? STATE.lastResultData.title : 'download';
+      const cleanTitle = itemData ? itemData.title : 'download';
       const filename = `${cleanTitle.replace(/[^a-zA-Z0-9أ-ي]/g, '_')}_${dl.quality}.${isVideo ? 'mp4' : 'mp3'}`;
       
       triggerFileDownload(button, dl.url, filename);
@@ -423,7 +442,11 @@ function hideLoading() {
 }
 
 function hideResult() {
-  resultCard.style.display = 'none';
+  const container = document.getElementById('results-container');
+  if (container) {
+    container.style.display = 'none';
+    container.innerHTML = '';
+  }
   STATE.lastResultData = null;
 }
 
@@ -565,3 +588,25 @@ function showDownloadAdModal(onComplete) {
     }
   }, 1000);
 }
+
+// --------------------------------------------------
+// Policy Overlay Initialization
+// --------------------------------------------------
+document.addEventListener('DOMContentLoaded', () => {
+  const policyOverlay = document.getElementById('policy-overlay');
+  const acceptBtn = document.getElementById('accept-policy-btn');
+
+  if (!localStorage.getItem('policyAccepted')) {
+    policyOverlay.style.display = 'flex';
+  }
+
+  if (acceptBtn) {
+    acceptBtn.addEventListener('click', () => {
+      localStorage.setItem('policyAccepted', 'true');
+      policyOverlay.style.opacity = '0';
+      setTimeout(() => {
+        policyOverlay.style.display = 'none';
+      }, 300); // match a small fadeout if needed
+    });
+  }
+});

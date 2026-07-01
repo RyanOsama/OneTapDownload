@@ -18,7 +18,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
   
   <!-- FontAwesome Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   
   <!-- Main Stylesheet -->
   <link rel="stylesheet" href="style.css">
@@ -40,6 +40,26 @@
      crossorigin="anonymous"></script>
 </head>
 <body>
+  <!-- Policy Modal Overlay -->
+  <div class="policy-overlay" id="policy-overlay" style="display: none;">
+    <div class="policy-modal">
+      <div class="policy-icon">
+        <i class="fa-solid fa-hand-holding-heart"></i>
+      </div>
+      <h2 data-en="Terms of Use & Disclaimer" data-ar="سياسة الاستخدام وإبراء الذمة">سياسة الاستخدام وإبراء الذمة</h2>
+      <div class="policy-warning">
+        <i class="fa-solid fa-eye"></i> <span data-en="Remember that God sees you" data-ar="تذكر أن الله يراك">تذكر أن الله يراك</span>
+      </div>
+      <div class="policy-content">
+        <p data-en="It is strictly forbidden to use this website to download anything that is displeasing to God. We are not responsible before God for any misuse." data-ar="يُمنع منعاً باتاً استخدام هذا الموقع في تحميل أي محتوى لا يرضي الله (مثل الأغاني، المحرمات، أو ما يخالف الشريعة الإسلامية). نحن بريئون أمام الله من أي استخدام سيء لهذه الأداة.">
+          يُمنع منعاً باتاً استخدام هذا الموقع في تحميل أي محتوى لا يرضي الله (مثل الأغاني، المحرمات، أو ما يخالف الشريعة الإسلامية). نحن بريئون أمام الله من أي استخدام سيء لهذه الأداة.
+        </p>
+      </div>
+      <button class="btn btn-primary btn-policy" id="accept-policy-btn">
+        <span data-en="I Agree and Pledge" data-ar="أوافق وأتعهد بذلك">أوافق وأتعهد بذلك</span>
+      </button>
+    </div>
+  </div>
   
   <!-- Background Glows Wrapper to prevent mobile layout shifting -->
   <div class="glow-wrapper">
@@ -131,35 +151,40 @@
         <p id="error-msg">حدث خطأ ما. يرجى التحقق من الرابط والمحاولة مجدداً.</p>
       </div>
 
-      <!-- Result Card -->
-      <div class="result-card" id="result-card" style="display: none;">
-        <div class="result-grid">
-          <div class="result-preview">
-            <img id="result-thumb" src="" alt="Thumbnail preview">
-            <span class="result-duration" id="result-duration">0:00</span>
-            <div class="play-overlay">
-              <i class="fa-solid fa-play"></i>
+      <!-- Results Container -->
+      <div class="results-container" id="results-container" style="display: none; display: flex; flex-direction: column; gap: 1.5rem;"></div>
+
+      <!-- Result Card Template -->
+      <template id="result-card-template">
+        <div class="result-card">
+          <div class="result-grid">
+            <div class="result-preview">
+              <img class="result-thumb" src="" alt="Thumbnail preview">
+              <span class="result-duration">0:00</span>
+              <div class="play-overlay">
+                <i class="fa-solid fa-play"></i>
+              </div>
             </div>
-          </div>
-          <div class="result-info">
-            <div class="result-meta">
-              <span class="result-platform-badge" id="result-platform">
-                <i class="fa-brands fa-youtube"></i>
-                <span id="result-platform-text">YouTube</span>
-              </span>
-              <span class="result-author" id="result-author">@author</span>
-            </div>
-            <h2 class="result-title" id="result-title">عنوان الفيديو يظهر هنا</h2>
-            
-            <div class="download-options">
-              <h4 class="options-heading" data-en="Available Downloads" data-ar="خيارات التحميل المتاحة">خيارات التحميل المتاحة</h4>
-              <div class="options-grid" id="options-container">
-                <!-- Javascript will inject options here -->
+            <div class="result-info">
+              <div class="result-meta">
+                <span class="result-platform-badge">
+                  <i class="platform-icon-el fa-brands fa-youtube"></i>
+                  <span class="result-platform-text">YouTube</span>
+                </span>
+                <span class="result-author">@author</span>
+              </div>
+              <h2 class="result-title">عنوان الفيديو يظهر هنا</h2>
+              
+              <div class="download-options">
+                <h4 class="options-heading" data-en="Available Downloads" data-ar="خيارات التحميل المتاحة">خيارات التحميل المتاحة</h4>
+                <div class="options-grid">
+                  <!-- Javascript will inject options here -->
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </template>
     </div>
 
 
@@ -187,13 +212,6 @@
             <i class="fa-brands fa-x-twitter"></i>
           </div>
           <span class="platform-name">X (Twitter)</span>
-        </div>
-
-        <div class="platform-card" data-platform="telegram" id="card-telegram">
-          <div class="platform-icon brand-telegram">
-            <i class="fa-brands fa-telegram"></i>
-          </div>
-          <span class="platform-name">Telegram</span>
         </div>
 
         <div class="platform-card" data-platform="youtube" id="card-youtube">
