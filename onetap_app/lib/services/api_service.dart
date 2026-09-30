@@ -5,8 +5,8 @@ import '../models/extract_result.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 class ApiService {
-  // Use localhost for Web testing, and your PC's IP for real phone testing.
-  static const String baseUrl = kIsWeb ? 'http://localhost:3000' : 'http://192.168.1.164:3000'; 
+  // Live VPS Server IP
+  static const String baseUrl = 'http://169.58.183.45:8080'; 
 
   static Future<List<ExtractResult>> extractUrl(String url) async {
     try {

@@ -1,7 +1,19 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
+const os = require('os');
 require('dotenv').config();
+
+const COOKIES_FILE = process.env.COOKIES_PATH || path.join(__dirname, 'cookies.txt');
+
+function getCommonYtDlpArgs() {
+  const args = ['--no-warnings'];
+  if (fs.existsSync(COOKIES_FILE)) {
+    args.push('--cookies', COOKIES_FILE);
+  }
+  return args;
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -93,17 +105,16 @@ app.post('/api/extract', async (req, res) => {
   const { execFile } = require('child_process');
   const path = require('path');
   const isWindows = process.platform === 'win32';
-  const ytDlpPath = isWindows ? path.join(__dirname, 'yt-dlp.exe') : path.join(__dirname, 'yt-dlp');
+  const ytDlpPath = isWindows ? path.join(__dirname, 'yt-dlp.exe') : (fs.existsSync('/usr/local/bin/yt-dlp') ? '/usr/local/bin/yt-dlp' : (fs.existsSync(path.join(__dirname, 'yt-dlp')) ? path.join(__dirname, 'yt-dlp') : 'yt-dlp'));
 
   const ytDlpArgs = [
     '-j',
-    '--no-warnings'
+    ...getCommonYtDlpArgs()
   ];
   
-  // YouTube requires the node JS runtime to bypass signature checks,
-  // but this flag breaks extraction on other platforms like TikTok/Snapchat/IG.
+  // YouTube requires EJS challenge resolver for signature checks
   if (matchedPlatformKey === 'youtube') {
-    ytDlpArgs.push('--js-runtimes', 'node');
+    ytDlpArgs.push('--remote-components', 'ejs:github');
   }
   
   ytDlpArgs.push(url);
@@ -222,7 +233,9 @@ app.post('/api/extract', async (req, res) => {
       const errMsg = stderr ? stderr.toString().slice(0, 300) : error.message;
       // Detect common error types and give a helpful Arabic/English message
       let friendlyError = 'تعذّر استخراج الفيديو. تأكد من أن الرابط صحيح وأن المقطع عام (غير خاص).';
-      if (/Private|private|login|sign in|empty media response/i.test(errMsg)) {
+      if (/rate-limit|rate limit|login required|checkpoint/i.test(errMsg)) {
+        friendlyError = 'إنستغرام يفرض قيوداً مؤقتة على الوصول (Rate Limit) لمنع التنزيل الآلي. يرجى المحاولة بعد قليل أو إضافة ملف cookies.txt.';
+      } else if (/Private|private|sign in|empty media response/i.test(errMsg)) {
         friendlyError = 'هذا المقطع خاص أو يتطلب تسجيل دخول. يرجى التحقق من إعدادات الخصوصية.';
       } else if (/not available|unavailable|removed|deleted/i.test(errMsg)) {
         friendlyError = 'المقطع غير متاح أو تم حذفه من المنصة.';
@@ -257,8 +270,10 @@ app.post('/api/extract', async (req, res) => {
           
           let audioFormats = formats.filter(f => f.vcodec === 'none' && f.acodec !== 'none' && f.url);
           audioFormats.sort((a, b) => {
-            if (a.ext === 'm4a' && b.ext !== 'm4a') return -1;
-            if (b.ext === 'm4a' && a.ext !== 'm4a') return 1;
+            const aIsAac = (a.acodec || '').includes('mp4a') || (a.acodec || '').includes('aac') || a.ext === 'm4a';
+            const bIsAac = (b.acodec || '').includes('mp4a') || (b.acodec || '').includes('aac') || b.ext === 'm4a';
+            if (aIsAac && !bIsAac) return -1;
+            if (!aIsAac && bIsAac) return 1;
             return (b.abr || 0) - (a.abr || 0);
           });
           const bestAudio = audioFormats.length > 0 ? audioFormats[0] : null;
@@ -279,14 +294,25 @@ app.post('/api/extract', async (req, res) => {
               if (!formatsByHeight[h]) {
                 formatsByHeight[h] = f;
               } else {
-                const existingHasAudio = formatsByHeight[h].acodec && formatsByHeight[h].acodec !== 'none' && formatsByHeight[h].acodec !== 'null';
-                if (hasAudio && !existingHasAudio) {
+                const existing = formatsByHeight[h];
+                const isAvc = (f.vcodec || '').toLowerCase().startsWith('avc') || (f.vcodec || '').toLowerCase().startsWith('h264');
+                const existingIsAvc = (existing.vcodec || '').toLowerCase().startsWith('avc') || (existing.vcodec || '').toLowerCase().startsWith('h264');
+                
+                // Prioritize H.264 (avc1) for universal mobile playback
+                if (isAvc && !existingIsAvc) {
                   formatsByHeight[h] = f;
-                } else if (hasAudio === existingHasAudio) {
-                  const currentSize = f.filesize || f.filesize_approx || 0;
-                  const existingSize = formatsByHeight[h].filesize || formatsByHeight[h].filesize_approx || 0;
-                  if (currentSize > existingSize) {
+                } else if (!isAvc && existingIsAvc) {
+                  // Keep existing H.264 format
+                } else {
+                  const existingHasAudio = existing.acodec && existing.acodec !== 'none' && existing.acodec !== 'null';
+                  if (hasAudio && !existingHasAudio) {
                     formatsByHeight[h] = f;
+                  } else if (hasAudio === existingHasAudio) {
+                    const currentSize = f.filesize || f.filesize_approx || 0;
+                    const existingSize = existing.filesize || existing.filesize_approx || 0;
+                    if (currentSize > existingSize) {
+                      formatsByHeight[h] = f;
+                    }
                   }
                 }
               }
@@ -385,9 +411,8 @@ app.get('/api/download_local', (req, res) => {
 
   const cleanFilename = filename || 'download.mp4';
   const fs = require('fs');
-  const path = require('path');
-  const tempDir = path.join(__dirname, 'temp_downloads');
-  if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
+  const tempDir = path.join(os.tmpdir(), 'onetap_downloads');
+  if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
 
   const tempId = Date.now() + '_' + Math.floor(Math.random() * 10000);
   const ext = is_audio === 'true' ? 'mp3' : 'mp4';
@@ -395,26 +420,26 @@ app.get('/api/download_local', (req, res) => {
 
   const ffmpegStatic = require('ffmpeg-static');
   
-  const ytDlpPath = process.platform === 'win32' ? path.join(__dirname, 'yt-dlp.exe') : path.join(__dirname, 'yt-dlp');
+  const ytDlpPath = process.platform === 'win32' ? path.join(__dirname, 'yt-dlp.exe') : (fs.existsSync('/usr/local/bin/yt-dlp') ? '/usr/local/bin/yt-dlp' : (fs.existsSync(path.join(__dirname, 'yt-dlp')) ? path.join(__dirname, 'yt-dlp') : 'yt-dlp'));
   
   const ytDlpArgs = [
-    '--no-warnings',
+    ...getCommonYtDlpArgs(),
     '--ffmpeg-location', ffmpegStatic,
     '-f', format_id,
     '-o', outputPath
   ];
 
   if (url.includes('youtube.com') || url.includes('youtu.be')) {
-    ytDlpArgs.push('--js-runtimes', 'node');
+    ytDlpArgs.push('--remote-components', 'ejs:github');
   }
-
-  ytDlpArgs.push(url);
 
   if (is_audio === 'true') {
     ytDlpArgs.push('-x', '--audio-format', 'mp3');
   } else {
-    ytDlpArgs.push('--merge-output-format', 'mp4');
+    ytDlpArgs.push('--merge-output-format', 'mp4', '--postprocessor-args', 'ffmpeg:-c:a aac -movflags +faststart');
   }
+
+  ytDlpArgs.push(url);
 
   const { spawn } = require('child_process');
   console.log('Spawning yt-dlp local download:', ytDlpArgs.join(' '));
@@ -485,8 +510,6 @@ app.get('/api/download', async (req, res) => {
 app.get('/*splat', (req, res) => {
   res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
 });
-
-const os = require('os');
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`OneTapDownload running locally at: http://localhost:${PORT}`);
