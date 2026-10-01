@@ -303,6 +303,67 @@ function showResult(data) {
     showError(STATE.translations[STATE.currentLanguage].invalidUrlError);
     return;
   }
+
+  // If multiple items (Stories or Carousel photos), show batch summary header
+  if (data.items.length > 1) {
+    const isEn = STATE.currentLanguage === 'en';
+    const batchHeader = document.createElement('div');
+    batchHeader.className = 'multi-results-header';
+    batchHeader.innerHTML = `
+      <div class="multi-results-title">
+        <i class="fa-solid fa-layer-group" style="color: var(--accent-color);"></i>
+        <span>${isEn ? 'Found' : 'تم العثور على'} <span class="multi-results-badge">${data.items.length}</span> ${isEn ? 'Items (Stories / Album)' : 'وسائط (ستوريات / ألبوم صور)'}</span>
+      </div>
+      <button class="btn-download-all" id="btn-download-all">
+        <i class="fa-solid fa-cloud-arrow-down"></i>
+        <span>${isEn ? 'Download All' : 'تحميل الكل'}</span>
+      </button>
+    `;
+    
+    // Attach Download All event
+    const downloadAllBtn = batchHeader.querySelector('#btn-download-all');
+    downloadAllBtn.addEventListener('click', () => {
+      downloadAllBtn.disabled = true;
+      downloadAllBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>${isEn ? 'Downloading...' : 'جاري التحميل...'}</span>`;
+      
+      let delay = 0;
+      data.items.forEach((item, idx) => {
+        if (item.downloads && item.downloads.length > 0) {
+          const primaryDl = item.downloads[0];
+          setTimeout(() => {
+            const isVideo = primaryDl.type === 'video';
+            const isImg = primaryDl.type === 'image';
+            const ext = isImg ? 'jpg' : isVideo ? 'mp4' : 'mp3';
+            const cleanTitle = (item.title || `item_${idx + 1}`).replace(/[^a-zA-Z0-9أ-ي]/g, '_');
+            const filename = `${cleanTitle}_${primaryDl.quality}.${ext}`;
+            
+            let downloadUrl = primaryDl.url;
+            if (!downloadUrl.startsWith('/api/') && !downloadUrl.startsWith('/')) {
+              downloadUrl = `/api/download?url=${encodeURIComponent(downloadUrl)}&filename=${encodeURIComponent(filename)}`;
+            }
+            
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => document.body.removeChild(a), 1000);
+          }, delay);
+          delay += 800; // 800ms stagger to prevent browser blocking
+        }
+      });
+
+      setTimeout(() => {
+        downloadAllBtn.disabled = false;
+        downloadAllBtn.innerHTML = `<i class="fa-solid fa-check"></i> <span>${isEn ? 'Downloaded All' : 'تم بدء تحميل الكل'}</span>`;
+        setTimeout(() => {
+          downloadAllBtn.innerHTML = `<i class="fa-solid fa-cloud-arrow-down"></i> <span>${isEn ? 'Download All' : 'تحميل الكل'}</span>`;
+        }, 3000);
+      }, delay + 500);
+    });
+
+    container.appendChild(batchHeader);
+  }
   
   data.items.forEach((itemData, index) => {
     // Clone template
@@ -313,12 +374,24 @@ function showResult(data) {
     clone.querySelector('.result-title').innerText = itemData.title;
     clone.querySelector('.result-author').innerText = itemData.author;
     clone.querySelector('.result-thumb').src = itemData.thumbnail;
-    clone.querySelector('.result-duration').innerText = itemData.duration;
+
+    const durationEl = clone.querySelector('.result-duration');
+    const playOverlay = clone.querySelector('.play-overlay');
+
+    const isImageItem = itemData.duration === 'صورة' || (itemData.downloads && itemData.downloads.every(d => d.type === 'image'));
+
+    if (isImageItem) {
+      durationEl.innerHTML = `<i class="fa-solid fa-camera"></i> ${STATE.currentLanguage === 'en' ? 'Photo' : 'صورة'}`;
+      if (playOverlay) playOverlay.style.display = 'none';
+    } else {
+      durationEl.innerText = itemData.duration || 'HD Video';
+      if (playOverlay) playOverlay.style.display = 'flex';
+    }
 
     const badge = clone.querySelector('.result-platform-badge');
     badge.className = `result-platform-badge ${itemData.platform}`;
     const icon = clone.querySelector('.platform-icon-el');
-    icon.className = `platform-icon-el ${PLATFORM_ICONS[itemData.platform]}`;
+    icon.className = `platform-icon-el ${PLATFORM_ICONS[itemData.platform] || 'fa-solid fa-circle-play'}`;
     clone.querySelector('.result-platform-text').innerText = itemData.platformName;
 
     // Translate static parts
@@ -346,8 +419,11 @@ function renderDownloadOptionsForCard(downloads, container, itemData) {
     item.className = 'download-item';
 
     const isVideo = dl.type === 'video';
-    const typeIconClass = isVideo ? 'fa-solid fa-video' : 'fa-solid fa-music';
-    const typeColorClass = isVideo ? 'video' : 'audio';
+    const isImage = dl.type === 'image';
+    const isAudio = dl.type === 'audio';
+
+    const typeIconClass = isImage ? 'fa-solid fa-image' : isVideo ? 'fa-solid fa-video' : 'fa-solid fa-music';
+    const typeColorClass = isImage ? 'image' : isVideo ? 'video' : 'audio';
 
     const details = document.createElement('div');
     details.className = 'download-item-details';
@@ -361,7 +437,7 @@ function renderDownloadOptionsForCard(downloads, container, itemData) {
       </div>
       <div class="download-label-info">
         <span class="download-label">${label}</span>
-        <span class="download-size-badge">${dl.quality} • ${dl.size}</span>
+        <span class="download-size-badge">${dl.quality}${dl.size && dl.size !== '—' ? ' • ' + dl.size : ''}</span>
       </div>
     `;
 
@@ -376,7 +452,8 @@ function renderDownloadOptionsForCard(downloads, container, itemData) {
     // Attach Download action
     button.addEventListener('click', () => {
       const cleanTitle = itemData ? itemData.title : 'download';
-      const filename = `${cleanTitle.replace(/[^a-zA-Z0-9أ-ي]/g, '_')}_${dl.quality}.${isVideo ? 'mp4' : 'mp3'}`;
+      const ext = isImage ? 'jpg' : isVideo ? 'mp4' : 'mp3';
+      const filename = `${cleanTitle.replace(/[^a-zA-Z0-9أ-ي]/g, '_')}_${dl.quality}.${ext}`;
       
       triggerFileDownload(button, dl.url, filename);
     });
